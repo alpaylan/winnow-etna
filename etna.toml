@@ -1,0 +1,91 @@
+name = "winnow"
+description = "Parser-combinator library for Rust — ETNA workload mining the winnow git history."
+language = "rust"
+crate = "winnow"
+base_commit = "c7151d4ae35007aa7875395a816b050ad5a01b47"
+
+[[tasks]]
+mutations = ["hex_uint_overflow_b428d65_1"]
+
+[tasks.source]
+repo = "https://github.com/winnow-rs/winnow"
+commits = ["b428d6504dd5f600ebe2a13bdd7b6510aa7d4a17"]
+commit_subjects = ["fix(char): Error on hex_uint overflow"]
+summary = "`hex_uint::<u32>` (then named `hex_u32`) silently truncated inputs longer than the type could hold by taking `min(invalid_offset, max_offset)`. The fix returns an `Err` whenever the input has more leading hex digits than the type's `max_nibbles`, instead of dropping the leading nibbles and parsing the trailing 8."
+
+[tasks.injection]
+kind = "marauders"
+files = ["src/ascii/mod.rs"]
+locations = [{ file = "src/ascii/mod.rs", line = 1298, symbol = "ascii::hex_uint" }]
+
+[tasks.bug]
+short_name = "hex_uint_overflow"
+invariant = "`winnow::ascii::hex_uint::<_, u32, _>(s)` must return `Err` when `s` consists entirely of hex digits and has length strictly greater than `max_nibbles::<u32>() = 8`. Conversely it must return `Ok` for hex-digit-only inputs of length 1..=8."
+how_triggered = "The buggy branch reads `Ok(max_offset) => invalid_offset.min(max_offset)`. For a 10-byte all-hex input, `invalid_offset = 10` and `max_offset = 8`, so the parser silently consumes 8 nibbles and reports success with the trailing 2 bytes as remainder, dropping the leading nibbles. The fix replaces the `min` with an explicit comparison that errors when `max_offset < invalid_offset`."
+
+[[tasks.tasks]]
+property = "HexUintOverflowErrors"
+witnesses = [
+  { test_fn = "witness_hex_uint_overflow_case_nine_digits_lowercase" },
+  { test_fn = "witness_hex_uint_overflow_case_ten_digits_alpha" },
+  { test_fn = "witness_hex_uint_overflow_case_eight_digits_ok" },
+]
+
+[[tasks]]
+mutations = ["iterator_misuse_panic_86b4c25_1"]
+
+[tasks.source]
+repo = "https://github.com/winnow-rs/winnow"
+commits = ["86b4c25b33aadc3095333b31afd89be6cc9c6e82"]
+commit_subjects = ["fix(comb): Prevent misuse of 'iterator' from panicking"]
+summary = "`combinator::iterator()` returns a `ParserIterator` whose state machine was held in `Option<State<E>>` and consumed via `.take().unwrap()`. Once the iterator transitioned to `Done`/`Cut`, a follow-up `next()` call would `unwrap()` a `None` and panic. The fix replaces the `Option` with `State<E>` directly and uses `matches!` so post-completion `next()` simply returns `None`."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/combinator/multi.rs"]
+locations = [{ file = "src/combinator/multi.rs", line = 50, symbol = "combinator::iterator" }]
+patch = "patches/iterator_misuse_panic_86b4c25_1.patch"
+
+[tasks.bug]
+short_name = "iterator_misuse_panic"
+invariant = "Calling `next()` on a `ParserIterator` after it has returned `None` (because the embedded parser backtracked or cut) must continue to return `None` and never panic. Calling `finish()` on an exhausted iterator must succeed without panicking."
+how_triggered = "The patch reinstates the buggy state representation: `state: Option<State<E>>` plus `let State::Running = self.state.take().unwrap()` inside `next()` and `match self.state.take().unwrap() { ... }` inside `finish()`. After the first `None`, the state field is left as `None`; subsequent calls into `next()`/`finish()` execute `.unwrap()` on `None` and panic with `called Option::unwrap() on a None value`."
+
+[[tasks.tasks]]
+property = "IteratorNoPanicAfterDone"
+witnesses = [
+  { test_fn = "witness_iterator_misuse_panic_case_short_input" },
+  { test_fn = "witness_iterator_misuse_panic_case_empty_input" },
+]
+
+[[tasks]]
+mutations = ["repeat_n_loop_check_f5c49ba_1"]
+
+[tasks.source]
+repo = "https://github.com/winnow-rs/winnow"
+commits = ["f5c49ba6607517c7eea73a32ffef66515f4b7049"]
+commit_subjects = ["fix(comb)!: Add missing infinite loop check to repeat"]
+issues = [365]
+summary = "The count-bounded `repeat(n, parser)` path (`fold_repeat_n_`) had no progress check: if `parser` succeeded without consuming any input, `repeat(n, parser)` silently accumulated n outputs over the same position. The fix adds an `eof_offset` comparison that produces a `ParserError::assert` (debug-build panic, release-build error) when the inner parser doesn't make progress, mirroring the unbounded `repeat0/repeat1` paths."
+
+[tasks.injection]
+kind = "marauders"
+files = ["src/combinator/multi.rs"]
+locations = [{ file = "src/combinator/multi.rs", line = 714, symbol = "combinator::fold_repeat_n_" }]
+
+[tasks.bug]
+short_name = "repeat_n_loop_check"
+invariant = "For any `n >= 1` and any parser `p` that succeeds without consuming input, `repeat(n, p).parse_next(&mut \"\")` must not return `Ok` — either an assert panic (debug) or `Err(ParserError::assert(..))` (release) is the correct outcome."
+how_triggered = "The buggy variant deletes the `if input.eof_offset() == len { return Err(ParserError::assert(...)); }` block. With `space0` as the inner parser, every call succeeds matching zero whitespace and consumes no input; the loop runs `n` times and returns `Ok(vec![\"\"; n])`."
+
+[[tasks.tasks]]
+property = "RepeatNLoopCheckErrors"
+witnesses = [
+  { test_fn = "witness_repeat_n_loop_check_case_n2" },
+  { test_fn = "witness_repeat_n_loop_check_case_n7" },
+]
+
+[[dropped]]
+commit = "9b31e4f"
+subject = "fix(stream): Don't overflow stack on PartialEq/PartialOrd"
+reason = "Bug triggers infinite recursion in BStr/Bytes ↔ &[u8]/str equality, causing process-killing stack overflow on every platform; cannot be observed via property_*+catch_unwind because the OS aborts the runner before any failure signal reaches the adapter."

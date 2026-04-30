@@ -86,10 +86,10 @@ wildcard_imports = "warn"
 zero_sized_map_values = "warn"
 
 [profile.dev]
-panic = "abort"
+# panic = "abort"  # ETNA: needs unwinding for catch_unwind in framework adapters
 
 [profile.release]
-panic = "abort"
+# panic = "abort"  # ETNA: needs unwinding for catch_unwind in framework adapters
 codegen-units = 1
 lto = true
 # debug = "line-tables-only"  # requires Cargo 1.71
@@ -141,8 +141,15 @@ is_terminal_polyfill = { version = "1.48.1", optional = true }
 memchr = { version = "2.7", optional = true, default-features = false }
 terminal_size = { version = "0.4.3", optional = true }
 
-[dev-dependencies]
+# ETNA benchmark runner dependencies — used by src/bin/etna.rs and the
+# `etna` module exposed from lib.rs. Placed in main [dependencies] so the
+# bin target links against them; pure parser users never reference them.
 proptest = "1.6.0"
+quickcheck = { path = "/Users/akeles/Programming/projects/PbtBenchmark/quickcheck-rs", features = ["etna"] }
+crabcheck = { path = "/Users/akeles/Programming/projects/PbtBenchmark/crabcheck" }
+hegeltest = "0.3.7"
+
+[dev-dependencies]
 criterion = "0.5.1"
 lexopt = "0.3.1"
 term-transcript = "0.2.0"

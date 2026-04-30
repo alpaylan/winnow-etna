@@ -1,0 +1,57 @@
+--- a/src/combinator/multi.rs	2026-04-30 05:39:20
++++ b/src/combinator/multi.rs	2026-04-30 05:39:33
+@@ -50,7 +50,7 @@
+     ParserIterator {
+         parser,
+         input,
+-        state: State::Running,
++        state: Some(State::Running),
+         marker: Default::default(),
+     }
+ }
+@@ -63,7 +63,7 @@
+ {
+     parser: F,
+     input: &'i mut I,
+-    state: State<E>,
++    state: Option<State<E>>,
+     marker: core::marker::PhantomData<O>,
+ }
+ 
+@@ -74,8 +74,8 @@
+     E: ParserError<I>,
+ {
+     /// Returns the remaining input if parsing was successful, or the error if we encountered an error.
+-    pub fn finish(self) -> Result<(), E> {
+-        match self.state {
++    pub fn finish(mut self) -> Result<(), E> {
++        match self.state.take().unwrap() {
+             State::Running | State::Done => Ok(()),
+             State::Cut(e) => Err(e),
+         }
+@@ -91,21 +91,21 @@
+     type Item = O;
+ 
+     fn next(&mut self) -> Option<Self::Item> {
+-        if matches!(self.state, State::Running) {
++        if let State::Running = self.state.take().unwrap() {
+             let start = self.input.checkpoint();
+ 
+             match self.parser.parse_next(self.input) {
+                 Ok(o) => {
+-                    self.state = State::Running;
++                    self.state = Some(State::Running);
+                     Some(o)
+                 }
+                 Err(e) if e.is_backtrack() => {
+                     self.input.reset(&start);
+-                    self.state = State::Done;
++                    self.state = Some(State::Done);
+                     None
+                 }
+                 Err(e) => {
+-                    self.state = State::Cut(e);
++                    self.state = Some(State::Cut(e));
+                     None
+                 }
+             }

@@ -1295,6 +1295,7 @@ where
         let max_nibbles = Output::max_nibbles(sealed::SealedMarker);
         let max_offset = input.offset_at(max_nibbles);
         let offset = match max_offset {
+            /*| hex_uint_overflow [etna] */
             Ok(max_offset) => {
                 if max_offset < invalid_offset {
                     // Overflow
@@ -1302,7 +1303,14 @@ where
                 } else {
                     invalid_offset
                 }
-            }
+            },
+            /*|| hex_uint_overflow_b428d65_1 */
+            /*|
+            Ok(max_offset) => {
+                invalid_offset.min(max_offset)
+            },
+            */
+            /* |*/
             Err(_) => {
                 if <Input as StreamIsPartial>::is_partial_supported()
                     && input.is_partial()

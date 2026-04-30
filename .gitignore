@@ -1,1 +1,4 @@
 target
+.hegel/
+etna.log
+progress.jsonl

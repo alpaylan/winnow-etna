@@ -121,6 +121,9 @@ pub mod _topic;
 #[cfg(feature = "unstable-doc")]
 pub mod _tutorial;
 
+#[cfg(all(feature = "ascii", feature = "std"))]
+pub mod etna;
+
 /// Core concepts available for glob import
 ///
 /// Including
