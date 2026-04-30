@@ -145,8 +145,8 @@ terminal_size = { version = "0.4.3", optional = true }
 # `etna` module exposed from lib.rs. Placed in main [dependencies] so the
 # bin target links against them; pure parser users never reference them.
 proptest = "1.6.0"
-quickcheck = { path = "/Users/akeles/Programming/projects/PbtBenchmark/quickcheck-rs", features = ["etna"] }
-crabcheck = { path = "/Users/akeles/Programming/projects/PbtBenchmark/crabcheck" }
+quickcheck = { git = "https://github.com/alpaylan/quickcheck.git", branch = "master", features = ["etna"] }
+crabcheck = { git = "https://github.com/alpaylan/crabcheck.git", branch = "main" }
 hegeltest = "0.3.7"
 
 [dev-dependencies]

@@ -1,6 +1,7 @@
 name = "winnow"
 description = "Parser-combinator library for Rust — ETNA workload mining the winnow git history."
 language = "rust"
+strategies = ["proptest", "quickcheck", "crabcheck", "hegel"]
 crate = "winnow"
 base_commit = "c7151d4ae35007aa7875395a816b050ad5a01b47"
 
