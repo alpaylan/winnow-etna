@@ -15,7 +15,8 @@ commit_subjects = ["fix(char): Error on hex_uint overflow"]
 summary = "`hex_uint::<u32>` (then named `hex_u32`) silently truncated inputs longer than the type could hold by taking `min(invalid_offset, max_offset)`. The fix returns an `Err` whenever the input has more leading hex digits than the type's `max_nibbles`, instead of dropping the leading nibbles and parsing the trailing 8."
 
 [tasks.injection]
-kind = "marauders"
+kind = "patch"
+patch = "patches/hex_uint_overflow_b428d65_1.patch"
 files = ["src/ascii/mod.rs"]
 locations = [{ file = "src/ascii/mod.rs", line = 1298, symbol = "ascii::hex_uint" }]
 
@@ -70,7 +71,8 @@ issues = [365]
 summary = "The count-bounded `repeat(n, parser)` path (`fold_repeat_n_`) had no progress check: if `parser` succeeded without consuming any input, `repeat(n, parser)` silently accumulated n outputs over the same position. The fix adds an `eof_offset` comparison that produces a `ParserError::assert` (debug-build panic, release-build error) when the inner parser doesn't make progress, mirroring the unbounded `repeat0/repeat1` paths."
 
 [tasks.injection]
-kind = "marauders"
+kind = "patch"
+patch = "patches/repeat_n_loop_check_f5c49ba_1.patch"
 files = ["src/combinator/multi.rs"]
 locations = [{ file = "src/combinator/multi.rs", line = 714, symbol = "combinator::fold_repeat_n_" }]
 

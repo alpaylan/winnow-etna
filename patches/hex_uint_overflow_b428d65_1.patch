@@ -1,0 +1,22 @@
+# marauders: name=hex_uint_overflow tags=[etna]
+diff --git a/src/ascii/mod.rs b/src/ascii/mod.rs
+--- a/src/ascii/mod.rs
++++ b/src/ascii/mod.rs
+@@ -1295,14 +1295,9 @@
+         let max_nibbles = Output::max_nibbles(sealed::SealedMarker);
+         let max_offset = input.offset_at(max_nibbles);
+         let offset = match max_offset {
+-            Ok(max_offset) => {
+-                if max_offset < invalid_offset {
+-                    // Overflow
+-                    return Err(ParserError::from_input(input));
+-                } else {
+-                    invalid_offset
+-                }
+-            },
++            Ok(max_offset) => {
++                invalid_offset.min(max_offset)
++            },
+             Err(_) => {
+                 if <Input as StreamIsPartial>::is_partial_supported()
+                     && input.is_partial()
