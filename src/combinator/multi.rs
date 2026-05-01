@@ -711,7 +711,6 @@ where
         let len = input.eof_offset();
         match parse.parse_next(input) {
             Ok(output) => {
-                /*| repeat_n_loop_check [etna] */
                 // infinite loop check: the parser must always consume
                 if input.eof_offset() == len {
                     return Err(ParserError::assert(
@@ -719,11 +718,6 @@ where
                         "`repeat` parsers must always consume",
                     ));
                 }
-                /*|| repeat_n_loop_check_f5c49ba_1 */
-                /*|
-                let _ = len;
-                */
-                /* |*/
 
                 res = fold(res, output);
             }

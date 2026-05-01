@@ -1,0 +1,19 @@
+# marauders: name=repeat_n_loop_check tags=[etna]
+diff --git a/src/combinator/multi.rs b/src/combinator/multi.rs
+--- a/src/combinator/multi.rs
++++ b/src/combinator/multi.rs
+@@ -711,13 +711,7 @@
+         let len = input.eof_offset();
+         match parse.parse_next(input) {
+             Ok(output) => {
+-                // infinite loop check: the parser must always consume
+-                if input.eof_offset() == len {
+-                    return Err(ParserError::assert(
+-                        input,
+-                        "`repeat` parsers must always consume",
+-                    ));
+-                }
++                let _ = len;
+ 
+                 res = fold(res, output);
+             }
